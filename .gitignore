@@ -1,0 +1,15 @@
+# Virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Large generated files
+embeddings/*.npy
+index/*.faiss
+processed/images/*
+
+# Env / secrets
+.env
+
+# OS files
+.DS_Store
