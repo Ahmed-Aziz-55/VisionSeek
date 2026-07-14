@@ -3,10 +3,13 @@
 __pycache__/
 *.pyc
 
+# Dataset — too large for git
+datasets/Images/
+
 # Large generated files
 embeddings/*.npy
+processed/images_v2/*
 index/*.faiss
-processed/images/*
 
 # Env / secrets
 .env
