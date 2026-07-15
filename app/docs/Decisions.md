@@ -199,3 +199,14 @@ pipeline (Decision 1). Embedding generation and index building are separate
 concerns with separate reasons to change — e.g. switching CLIP model
 variants only touches `generate_embeddings.py`; switching FAISS index type
 (e.g. to an approximate index for larger scale) only touches `IndexBuilder`.
+
+---
+
+## 12. FAISS index built and sanity-verified
+
+The image index was built via `app/scripts/build_index.py`, producing
+`index/image_index.faiss` with all 31,783 image embeddings. Verified with
+a self-query sanity check: searching the index using image 0 as the query
+returns image 0 itself as the top match with similarity ~1.0, and the
+remaining top-5 matches show a reasonable descending similarity ranking —
+confirming the index is not returning arbitrary or randomly-ordered results.
