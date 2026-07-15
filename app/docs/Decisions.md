@@ -210,3 +210,37 @@ a self-query sanity check: searching the index using image 0 as the query
 returns image 0 itself as the top match with similarity ~1.0, and the
 remaining top-5 matches show a reasonable descending similarity ranking —
 confirming the index is not returning arbitrary or randomly-ordered results.
+
+
+---
+
+## 13. Upgraded from CLIP ViT-B/32 to ViT-L/14 after observing weak text-image alignment
+
+The initial embedding pipeline used `openai/clip-vit-base-patch32` (512-dim).
+A qualitative test — searching "white cat" — returned zero genuine white-cat
+results in the top-5, despite the dataset containing 29 images whose captions
+mention both "white" and "cat" (verified via word-boundary regex match on
+`image_mapping.json`, after ruling out substring false positives like
+"catch" and "CAT construction equipment"). Since 29 relevant images existed
+but none surfaced, the issue was diagnosed as a model limitation rather than
+a dataset limitation — base-size CLIP is known to weight individual
+attributes (e.g. color) over object identity in multi-concept queries.
+
+Switched to `openai/clip-vit-large-patch14` (768-dim). Re-generated all
+image and text embeddings and rebuilt the FAISS index. The same "white cat"
+query then returned 3 genuine white-cat matches in the top-5, up from 0/5 —
+confirming the upgrade measurably improved text-image semantic alignment.
+
+**Reasoning:** diagnosing "dataset vs. model" before changing anything
+avoided wasting effort tuning the wrong component. Only after confirming
+sufficient ground-truth examples existed in the dataset was the model
+treated as the bottleneck. `EmbeddingGenerator` and `IndexBuilder` required
+no code changes for this swap — `model_name` is a constructor parameter and
+embedding dimension is read dynamically (`img_emb.shape[1]`), which is a
+direct payoff of the SRP-based design from Decisions 1 and 11.
+
+**Trade-off:** ViT-L/14 is significantly slower on CPU (full-dataset
+embedding generation took well over an hour for 31,783 images, vs. a few
+minutes for ViT-B/32) and requires a larger download (~1.7GB vs ~600MB).
+Acceptable here since embedding generation is a one-time offline step, not
+part of the online search request path.

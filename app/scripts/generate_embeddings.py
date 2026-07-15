@@ -14,7 +14,7 @@ if TEST_MODE:
     records = records[:TEST_SIZE]
     print(f"TEST MODE: using only {len(records)} records\n")
 
-generator = EmbeddingGenerator(batch_size=64)
+generator = EmbeddingGenerator(model_name="openai/clip-vit-large-patch14", batch_size=64)
 
 print("Generating image embeddings...")
 img_emb, img_records = generator.generate_image_embeddings(records)
