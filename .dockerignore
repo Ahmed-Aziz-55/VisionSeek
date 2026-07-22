@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+datasets/
+processed/
+embeddings/
+index/
+logs/
+*.log
+data/processed/
+app/evaluation/reports/
+.env
+README.md
+requirements-dev.txt
