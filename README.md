@@ -63,127 +63,116 @@ Malformed rows are not silently dropped. The loader tags them with `_error`, the
 ---
 
 ## Pipeline Flow
-
-```text
 raw dataset file
-      │
-      ▼
-DatasetLoader.load()          → list[dict], malformed lines flagged with _error
-      │
-      ▼
-DatasetValidator.validate()   → (valid_records, rejected_records), Pydantic-checked
-      │
-      ├──► DatasetInspector.summary()   → total rows, category counts, caption length
-      │
-      ▼
-Preprocessor                  → resize, processed_path, UUID filenames
-      │
-      ▼
-EmbeddingGenerator             → normalized image_embeddings.npy, text_embeddings.npy (768-dim)
-      │
-      ▼
-IndexBuilder.build()            → FAISS IndexFlatIP, saved as index/image_index.faiss
-      │
-      ▼
-ImageSearcher.search()          → text query → top-K matching images
-      │
-      ▼
+│
+▼
+DatasetLoader.load() → list[dict], malformed lines flagged with _error
+│
+▼
+DatasetValidator.validate() → (valid_records, rejected_records), Pydantic-checked
+│
+├──► DatasetInspector.summary() → total rows, category counts, caption length
+│
+▼
+Preprocessor → resize, processed_path, UUID filenames
+│
+▼
+EmbeddingGenerator → normalized image_embeddings.npy, text_embeddings.npy (768-dim)
+│
+▼
+IndexBuilder.build() → FAISS IndexFlatIP, saved as index/image_index.faiss
+│
+▼
+ImageSearcher.search() → text query → top-K matching images
+│
+▼
 RetrievalEvaluator / DuplicateDetector → Recall@K, Precision@K, latency, duplicates
-Components
-app/dataset/loader.py — DatasetLoader, reads and flags malformed rows.
 
-app/dataset/validator.py — DatasetValidator, checks empty captions, empty categories, image existence, and Pydantic schema validity via ImageRecord.
+text
 
-app/dataset/inspector.py — DatasetInspector, reports statistics without mutating records.
+---
 
-app/dataset/preprocessor.py — Preprocessor, resizes images and writes processed JPEGs to disk.
+## Components
 
-app/models/image_record.py — ImageRecord, the Pydantic model for a valid record.
+- `app/dataset/loader.py` — `DatasetLoader`, reads and flags malformed rows.
+- `app/dataset/validator.py` — `DatasetValidator`, checks empty captions, empty categories, image existence, and Pydantic schema validity via `ImageRecord`.
+- `app/dataset/inspector.py` — `DatasetInspector`, reports statistics without mutating records.
+- `app/dataset/preprocessor.py` — `Preprocessor`, resizes images and writes processed JPEGs to disk.
+- `app/models/image_record.py` — `ImageRecord`, the Pydantic model for a valid record.
+- `app/services/embedding_generator.py` — `EmbeddingGenerator`, loads CLIP and generates normalized image/text embeddings.
+- `app/scripts/generate_embeddings.py` — runs `EmbeddingGenerator` over the preprocessed manifest.
+- `app/index/index_builder.py` — `IndexBuilder`, builds, saves, and loads a FAISS index from image embeddings.
+- `app/scripts/build_index.py` — builds the FAISS index via `IndexBuilder`.
+- `app/services/searcher.py` — `ImageSearcher`, encodes a text query and searches the FAISS index.
+- `app/scripts/search_demo.py` — interactive CLI for trying searches.
+- `app/evaluation/metrics.py` — `RetrievalEvaluator`, computes Recall@K, Precision@K, and search latency.
+- `app/evaluation/duplicate_detector.py` — `DuplicateDetector`, finds near-duplicate images via the FAISS index.
+- `app/scripts/run_evaluation.py` — runs the full evaluation suite and saves a JSON report.
+- `app/core/logging_config.py` — centralized logging setup used by all pipeline scripts.
 
-app/services/embedding_generator.py — EmbeddingGenerator, loads CLIP and generates normalized image/text embeddings.
+---
 
-app/scripts/generate_embeddings.py — runs EmbeddingGenerator over the preprocessed manifest.
+## Validation Rules
 
-app/index/index_builder.py — IndexBuilder, builds, saves, and loads a FAISS index from image embeddings.
-
-app/scripts/build_index.py — builds the FAISS index via IndexBuilder.
-
-app/services/searcher.py — ImageSearcher, encodes a text query and searches the FAISS index.
-
-app/scripts/search_demo.py — interactive CLI for trying searches.
-
-app/evaluation/metrics.py — RetrievalEvaluator, computes Recall@K, Precision@K, and search latency.
-
-app/evaluation/duplicate_detector.py — DuplicateDetector, finds near-duplicate images via the FAISS index.
-
-app/scripts/run_evaluation.py — runs the full evaluation suite and saves a JSON report.
-
-app/core/logging_config.py — centralized logging setup used by all pipeline scripts.
-
-Validation Rules
 The current validator rejects records when:
 
-the loader already tagged the row with _error
+- the loader already tagged the row with `_error`
+- `caption` is empty or whitespace only
+- `category` is empty or whitespace only
+- the image file does not exist at `base_image_dir / image_path`
+- the record fails `ImageRecord` Pydantic schema validation
 
-caption is empty or whitespace only
+Each rejected record carries a `_reasons` list so failures remain visible during analysis.
 
-category is empty or whitespace only
+---
 
-the image file does not exist at base_image_dir / image_path
+## Preprocessing
 
-the record fails ImageRecord Pydantic schema validation
-
-Each rejected record carries a _reasons list so failures remain visible during analysis.
-
-Preprocessing
 The preprocessor currently:
 
-resizes images to a target size of 224 x 224 by default
+- resizes images to a target size of 224 x 224 by default
+- can preserve aspect ratio with padding
+- saves outputs as JPEG files with UUID-based filenames
+- stores the processed output path in `processed_path`
+- raises an error if the failure rate exceeds the configured threshold
 
-can preserve aspect ratio with padding
+---
 
-saves outputs as JPEG files with UUID-based filenames
+## Embedding Generation
 
-stores the processed output path in processed_path
+`EmbeddingGenerator` (via `generate_embeddings.py`):
 
-raises an error if the failure rate exceeds the configured threshold
+- loads CLIP (`openai/clip-vit-large-patch14`) on CPU
+- generates image embeddings and text embeddings in batches
+- L2-normalizes every embedding (unit vectors, norm ≈ 1.0) so that FAISS inner-product search is equivalent to cosine similarity
+- saves both as `.npy` files under `embeddings/`, shape `(N, 768)`
 
-Embedding Generation
-EmbeddingGenerator (via generate_embeddings.py):
+Originally used `openai/clip-vit-base-patch32` (512-dim); upgraded to ViT-Large after observing weak text-image alignment on multi-concept queries — see Decision 13 for the full analysis.
 
-loads CLIP (openai/clip-vit-large-patch14) on CPU
+---
 
-generates image embeddings and text embeddings in batches
+## Index Building
 
-L2-normalizes every embedding (unit vectors, norm ≈ 1.0) so that FAISS inner-product search is equivalent to cosine similarity
+`IndexBuilder`:
 
-saves both as .npy files under embeddings/, shape (N, 768)
+- wraps a FAISS `IndexFlatIP` index (inner product, exact search)
+- expects embeddings to already be L2-normalized — it does not normalize internally
+- casts embeddings to `float32` before adding, since FAISS requires it
+- can save/load the index to/from disk via `faiss.write_index` / `faiss.read_index`
 
-Originally used openai/clip-vit-base-patch32 (512-dim); upgraded to ViT-Large after observing weak text-image alignment on multi-concept queries — see Decision 13 for the full analysis.
+---
 
-Index Building
-IndexBuilder:
+## Search
 
-wraps a FAISS IndexFlatIP index (inner product, exact search)
+`ImageSearcher`:
 
-expects embeddings to already be L2-normalized — it does not normalize internally
-
-casts embeddings to float32 before adding, since FAISS requires it
-
-can save/load the index to/from disk via faiss.write_index / faiss.read_index
-
-Search
-ImageSearcher:
-
-loads the saved FAISS index and image mapping
-
-reuses EmbeddingGenerator's CLIP model to encode the text query identically to how the indexed embeddings were generated
-
-returns top-K matches as {image_path, caption, score}
+- loads the saved FAISS index and image mapping
+- reuses `EmbeddingGenerator`'s CLIP model to encode the text query identically to how the indexed embeddings were generated
+- returns top-K matches as `{image_path, caption, score}`
 
 Try it interactively:
 
-bash
+```bash
 python -m app.scripts.search_demo
 Results
 Evaluated on the full dataset (31,783 caption→image queries), using each caption as a query and checking whether its original image is retrieved.
