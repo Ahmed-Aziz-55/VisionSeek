@@ -172,6 +172,18 @@ Originally used `openai/clip-vit-base-patch32` (512-dim); upgraded to ViT-Large 
 
 Try it interactively:
 
+
+
+## Search
+
+`ImageSearcher`:
+
+- loads the saved FAISS index and image mapping
+- reuses `EmbeddingGenerator`'s CLIP model to encode the text query identically to how the indexed embeddings were generated
+- returns top-K matches as `{image_path, caption, score}`
+
+Try it interactively:
+
 ```bash
 python -m app.scripts.search_demo
 Results
@@ -326,7 +338,12 @@ Current Test Coverage
 
 ✅ Verify a FileNotFoundError is raised when the dataset file is missing.
 
+
+
+
 <div align="center">
 Built with ❤️ using CLIP + FAISS
 
 </div> ```
+
+
