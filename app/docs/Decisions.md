@@ -335,3 +335,44 @@ pairs, same similarities), which is expected since duplicate detection is
 deterministic and doesn't depend on query sampling.
 
 *****************************************************************************
+
+
+---
+
+## 15. Removed unused `settings.py`, wired up `ImageRecord` in Validator, deleted stale `check_dataset.py`
+
+A codebase audit (using `grep` to confirm actual usage rather than assuming)
+found three issues:
+
+1. **`app/configs/settings.py`** — defined a Pydantic `Settings` class but
+   was imported nowhere in the codebase. Removed. A proper config module
+   will be added when the FastAPI backend is built, scoped to what that
+   backend actually needs.
+
+2. **`ImageRecord` was imported but never instantiated.** `validator.py`
+   and `inspector.py` both imported it, but no code ever called
+   `ImageRecord(...)` — meaning the Pydantic runtime validation described
+   in Decision 5 never actually ran during validation. Fixed by
+   instantiating `ImageRecord` inside `DatasetValidator.validate()`,
+   wrapped in a `try/except ValidationError`, after the existing manual
+   checks pass. This makes the schema validation real rather than
+   documented-but-unused. Removed the now-unnecessary import from
+   `inspector.py`, which never needed the schema — it only reads plain
+   dict fields for statistics.
+
+3. **`app/scripts/check_dataset.py` was deleted.** It loaded the raw
+   `datasets/Images/results.csv` directly through `DatasetLoader`, which
+   expects the pipeline's `image_path|caption|category` format. The raw
+   CSV's actual format is `image_name| comment_number| comment` — three
+   pipe-separated fields, but with different semantics. Running it through
+   `DatasetLoader` silently mismapped `comment_number` into the `caption`
+   field and the actual caption text into `category`. This script predates
+   `convert_dataset.py` (which correctly transforms the raw CSV into the
+   pipeline's expected format) and was never updated after the pipeline's
+   input format was finalized — a stale exploration script now fully
+   superseded by `reprocess_images.py`.
+
+**Reasoning:** all three were found by checking actual usage (`grep`)
+rather than assuming a file's presence meant it was needed — the same
+principle Decision 3 applies to validation itself: don't take correctness
+on faith, verify it.

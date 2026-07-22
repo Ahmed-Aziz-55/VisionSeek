@@ -1,5 +1,6 @@
 from collections import Counter
-from app.models.image_record import ImageRecord
+
+
 class DatasetInspector:
     """Pure descriptive stats — no filtering, no rejection."""
 
