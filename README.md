@@ -1,144 +1,151 @@
-# <div align="center">
-
-# 🔍 VisionSeek
-
-### *A production-style CLIP + FAISS text-to-image semantic search engine*
-
-[![Python](https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0-green?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red?style=for-the-badge&logo=pytorch)](https://pytorch.org/)
-[![FAISS](https://img.shields.io/badge/FAISS-Vector_Search-orange?style=for-the-badge&logo=facebook)](https://github.com/facebookresearch/faiss)
-[![Tests](https://img.shields.io/badge/Tests-Pytest-success?style=for-the-badge&logo=pytest)](https://docs.pytest.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
-[![HuggingFace](https://img.shields.io/badge/HuggingFace-CLIP-FFD21E?style=for-the-badge&logo=huggingface)](https://huggingface.co/openai/clip-vit-large-patch14)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+<div align="center">
+🔍 VisionSeek
+A production-style CLIP + FAISS text-to-image semantic search engine
+https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python
+https://img.shields.io/badge/FastAPI-0.115.0-green?style=for-the-badge&logo=fastapi
+https://img.shields.io/badge/PyTorch-2.0+-red?style=for-the-badge&logo=pytorch
+https://img.shields.io/badge/FAISS-Vector_Search-orange?style=for-the-badge&logo=facebook
+https://img.shields.io/badge/Tests-Pytest-success?style=for-the-badge&logo=pytest
+https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker
+https://img.shields.io/badge/HuggingFace-CLIP-FFD21E?style=for-the-badge&logo=huggingface
+https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge
 
 </div>
+📋 Table of Contents
+Overview
 
----
+Features
 
-## 📋 Table of Contents
+Tech Stack
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Architecture](#-architecture)
-- [Pipeline](#-pipeline)
-- [Components](#-components)
-- [Validation Rules](#-validation-rules)
-- [Preprocessing Behavior](#-preprocessing-behavior)
-- [Embedding Generation](#-embedding-generation)
-- [Index Building](#-index-building)
-- [Search](#-search)
-- [Dataset Format](#-dataset-format)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [Docker](#-docker)
-- [FastAPI](#-fastapi)
-- [Evaluation](#-evaluation)
-- [Results](#-results)
-- [Testing](#-testing)
-- [Project Layout](#-project-layout)
-- [Future Improvements](#-future-improvements)
-- [Acknowledgements](#-acknowledgements)
-- [License](#-license)
+Architecture
 
----
+Pipeline
 
-## 🔎 Overview
+Components
 
-**VisionSeek** is a production-grade text-to-image semantic search engine that leverages **CLIP** (Contrastive Language-Image Pre-training) and **FAISS** (Facebook AI Similarity Search) to enable fast, accurate image retrieval using natural language queries.
+Validation Rules
+
+Preprocessing Behavior
+
+Embedding Generation
+
+Index Building
+
+Search
+
+Dataset Format
+
+Installation
+
+Usage
+
+Docker
+
+FastAPI
+
+Evaluation
+
+Results
+
+Testing
+
+Project Layout
+
+Future Improvements
+
+Acknowledgements
+
+License
+
+🔎 Overview
+VisionSeek is a production-grade text-to-image semantic search engine that leverages CLIP (Contrastive Language-Image Pre-training) and FAISS (Facebook AI Similarity Search) to enable fast, accurate image retrieval using natural language queries.
 
 The system processes a raw image-caption dataset through a multi-stage pipeline that includes validation, preprocessing, embedding generation (768-dimensional vectors), FAISS index building, and an interactive search interface with comprehensive evaluation metrics. VisionSeek is designed to be modular, production-ready, and easily deployable via Docker.
 
-### Key Capabilities
+Key Capabilities
+Semantic Image Retrieval – Find images using natural language descriptions without requiring exact keyword matches
 
-- **Semantic Image Retrieval** – Find images using natural language descriptions without requiring exact keyword matches
-- **High-Performance Search** – FAISS-powered vector similarity search with sub-100ms latency
-- **Batch Processing** – Efficiently process large datasets with batch embedding generation
-- **Production-Ready Pipeline** – Modular components with validation, logging, and error handling
-- **Comprehensive Evaluation** – Built-in benchmarking with Recall@K, Precision@K, and latency metrics
+High-Performance Search – FAISS-powered vector similarity search with sub-100ms latency
 
-### Use Cases
+Batch Processing – Efficiently process large datasets with batch embedding generation
 
-1. **E-commerce Product Search** – Find products by describing them in natural language
-2. **Digital Asset Management** – Search through large image libraries using semantic queries
-3. **Content Moderation** – Find similar images across large datasets
-4. **Research & Development** – Benchmark and evaluate multimodal retrieval systems
-5. **Visual Recommendation Systems** – Power recommendation engines with visual similarity
+Production-Ready Pipeline – Modular components with validation, logging, and error handling
 
----
+Comprehensive Evaluation – Built-in benchmarking with Recall@K, Precision@K, and latency metrics
 
-## ✨ Features
+Use Cases
+E-commerce Product Search – Find products by describing them in natural language
 
-- 🖼️ **Semantic Image Search** – Find images using natural language descriptions with CLIP's powerful multimodal understanding
-- ⚡ **High-Performance Retrieval** – FAISS-powered nearest neighbor search with support for exact and approximate search
-- 📊 **Production-Ready Pipeline** – Modular architecture with validation, preprocessing, and batch processing
-- 🏗️ **Batch Processing** – Efficient batch embedding generation for large datasets (1000+ images per batch)
-- 🔬 **Comprehensive Evaluation** – Built-in benchmarking suite with Recall@K, Precision@K, and latency analysis
-- 🐳 **Dockerized Deployment** – Containerized deployment with volume mounts for data persistence
-- 🌐 **RESTful API** – FastAPI-based web service with interactive Swagger documentation
-- 📈 **Duplicate Detection** – Identify near-duplicate images using configurable similarity thresholds
-- 🔍 **Interactive Demo** – CLI-based search interface for quick testing
-- 📝 **Structured Logging** – Centralized logging configuration across all pipeline components
+Digital Asset Management – Search through large image libraries using semantic queries
 
----
+Content Moderation – Find similar images across large datasets
 
-## 🛠️ Tech Stack
+Research & Development – Benchmark and evaluate multimodal retrieval systems
 
-| Category | Technology | Version | Purpose |
-|----------|------------|---------|---------|
-| **Language** | Python | 3.12 | Primary programming language |
-| **ML Framework** | PyTorch | 2.0+ | Deep learning framework for CLIP |
-| **Vision Model** | CLIP (ViT-Large-Patch14) | - | 768-dim multimodal embeddings |
-| **Vector Search** | FAISS (IndexFlatIP) | - | Exact nearest neighbor search |
-| **API Framework** | FastAPI | 0.115.0 | RESTful web service |
-| **Server** | Uvicorn | - | ASGI server for FastAPI |
-| **Data Validation** | Pydantic | v2 | Schema validation with type checking |
-| **Testing** | Pytest | - | Automated testing framework |
-| **Containerization** | Docker | - | Containerization and deployment |
-| **Orchestration** | Docker Compose | - | Multi-container orchestration |
-| **Logging** | Python logging | - | Structured logging with rotation |
-| **Code Quality** | Black, Flake8 | - | Code formatting and linting |
-| **Package Management** | pip | - | Dependency management |
+Visual Recommendation Systems – Power recommendation engines with visual similarity
 
----
+✨ Features
+🖼️ Semantic Image Search – Find images using natural language descriptions with CLIP's powerful multimodal understanding
 
-## 🏗️ Architecture
+⚡ High-Performance Retrieval – FAISS-powered nearest neighbor search with support for exact and approximate search
 
-```mermaid
-graph TD
-    A[Raw Dataset<br/>Pipe-separated file] --> B[DatasetLoader]
-    B --> C[DatasetValidator]
-    C --> D{Valid?}
-    D -->|Yes| E[Preprocessor]
-    D -->|No| F[Rejected Records<br/>with reasons]
-    E --> G[Processed Images<br/>224x224 JPEG]
-    G --> H[EmbeddingGenerator]
-    H --> I[Image Embeddings<br/>(N, 768)]
-    H --> J[Text Embeddings<br/>(N, 768)]
-    I --> K[IndexBuilder]
-    K --> L[FAISS Index<br/>IndexFlatIP]
-    L --> M[ImageSearcher]
-    M --> N[Search Results<br/>Top-K matches]
-    
-    C --> O[DatasetInspector]
-    O --> P[Statistics Report]
-    
-    L --> Q[RetrievalEvaluator]
-    Q --> R[Evaluation Metrics<br/>Recall@K, Precision@K, Latency]
-    
-    L --> S[DuplicateDetector]
-    S --> T[Duplicate Pairs<br/>Similarity ≥ threshold]
-    
-    M --> U[FastAPI Service]
-    U --> V[REST API]
-    
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style L fill:#bbf,stroke:#333,stroke-width:2px
-    style M fill:#bbf,stroke:#333,stroke-width:2px
-    style N fill:#bfb,stroke:#333,stroke-width:2px
-    style U fill:#f96,stroke:#333,stroke-width:2px
+📊 Production-Ready Pipeline – Modular architecture with validation, preprocessing, and batch processing
+
+🏗️ Batch Processing – Efficient batch embedding generation for large datasets (1000+ images per batch)
+
+🔬 Comprehensive Evaluation – Built-in benchmarking suite with Recall@K, Precision@K, and latency analysis
+
+🐳 Dockerized Deployment – Containerized deployment with volume mounts for data persistence
+
+🌐 RESTful API – FastAPI-based web service with interactive Swagger documentation
+
+📈 Duplicate Detection – Identify near-duplicate images using configurable similarity thresholds
+
+🔍 Interactive Demo – CLI-based search interface for quick testing
+
+📝 Structured Logging – Centralized logging configuration across all pipeline components
+
+🛠️ Tech Stack
+Category	Technology	Version	Purpose
+Language	Python	3.12	Primary programming language
+ML Framework	PyTorch	2.0+	Deep learning framework for CLIP
+Vision Model	CLIP (ViT-Large-Patch14)	-	768-dim multimodal embeddings
+Vector Search	FAISS (IndexFlatIP)	-	Exact nearest neighbor search
+API Framework	FastAPI	0.115.0	RESTful web service
+Server	Uvicorn	-	ASGI server for FastAPI
+Data Validation	Pydantic	v2	Schema validation with type checking
+Testing	Pytest	-	Automated testing framework
+Containerization	Docker	-	Containerization and deployment
+Orchestration	Docker Compose	-	Multi-container orchestration
+Logging	Python logging	-	Structured logging with rotation
+Code Quality	Black, Flake8	-	Code formatting and linting
+Package Management	pip	-	Dependency management
+🏗️ Architecture
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 🔄 Pipeline
 The pipeline is designed as a series of single-purpose components that transform raw data into a searchable index:
 
@@ -716,4 +723,4 @@ Built with ❤️ using CLIP + FAISS
 
 ⬆ Back to top
 
-</div> ```
+</div>
