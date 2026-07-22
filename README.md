@@ -295,3 +295,43 @@ The container runs as a non-root user (`appuser`) and does not bundle the
 image dataset, embeddings, or FAISS index — those are mounted at runtime
 via `-v`, keeping the image itself small (code + dependencies only).
 
+## API (FastAPI)
+
+`app/main.py` exposes `ImageSearcher` over HTTP. The CLIP model and FAISS
+index load once at startup (not per-request).
+
+Run locally:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Or via Docker Compose (recommended — handles volume mounts automatically):
+
+```bash
+docker compose up
+```
+
+### Endpoints
+
+- `GET /health` — returns `{"status": "ok", "searcher_ready": true}` once
+  the model and index are loaded.
+- `POST /search` — text-to-image search.
+
+  Request:
+```json
+  {"query": "a dog running on the beach", "top_k": 5}
+```
+
+  Response:
+```json
+  {
+    "query": "a dog running on the beach",
+    "count": 5,
+    "results": [
+      {"image_path": "datasets/Images/1799271536.jpg", "caption": "...", "score": 0.303}
+    ]
+  }
+```
+
+Interactive docs (Swagger UI) at `http://127.0.0.1:8000/docs`.
