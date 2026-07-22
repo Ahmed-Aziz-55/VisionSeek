@@ -335,3 +335,29 @@ docker compose up
 ```
 
 Interactive docs (Swagger UI) at `http://127.0.0.1:8000/docs`.
+
+
+
+
+## Testing
+
+The project uses **pytest** for automated testing.
+
+### Run all tests
+
+```bash
+pytest -v
+```
+
+### Run a specific test file
+
+```bash
+pytest app/tests/test_loader.py -v
+```
+
+### Current Test Coverage
+
+- ✅ Verify the dataset loader returns the correct number of records.
+- ✅ Verify well-formed dataset rows are parsed correctly.
+- ✅ Verify malformed rows are detected and handled correctly.
+- ✅ Verify a `FileNotFoundError` is raised when the dataset file is missing.
