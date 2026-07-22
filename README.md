@@ -253,3 +253,45 @@ logs/             application logs (gitignored)
 
 - [app/docs/Decisions.md](app/docs/Decisions.md) records the architecture
   decisions behind the current pipeline design.
+
+
+
+
+
+  ## Docker
+
+Build the image:
+
+```bash
+docker build -t visionseek .
+```
+
+Run the interactive search demo (mounts the dataset, embeddings, index, and
+Hugging Face model cache from the host so the image stays small and the
+CLIP model isn't re-downloaded on every run):
+
+```bash
+docker run -it \
+  -v $(pwd)/datasets:/app/datasets \
+  -v $(pwd)/embeddings:/app/embeddings \
+  -v $(pwd)/index:/app/index \
+  -v ~/.cache/huggingface:/home/appuser/.cache/huggingface \
+  visionseek
+```
+
+Run any other script instead of the default search demo, e.g. the
+evaluation suite:
+
+```bash
+docker run -it \
+  -v $(pwd)/datasets:/app/datasets \
+  -v $(pwd)/embeddings:/app/embeddings \
+  -v $(pwd)/index:/app/index \
+  -v ~/.cache/huggingface:/home/appuser/.cache/huggingface \
+  visionseek python -m app.scripts.run_evaluation
+```
+
+The container runs as a non-root user (`appuser`) and does not bundle the
+image dataset, embeddings, or FAISS index — those are mounted at runtime
+via `-v`, keeping the image itself small (code + dependencies only).
+
