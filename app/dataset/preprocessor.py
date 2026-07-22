@@ -1,6 +1,9 @@
+import logging
 import uuid
 from pathlib import Path
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 
 class Preprocessor:
@@ -101,30 +104,35 @@ class Preprocessor:
         base_dir = Path(base_image_dir) if base_image_dir else Path("")
         processed, failed = [], []
 
-        print(f"Processing {len(records)} images...")
-        print(f"  Target size: {self.target_size}")
-        print(f"  Preserve aspect ratio: {self.preserve_aspect_ratio}")
+        logger.info(f"Processing {len(records)} images...")
+        logger.info(f"  Target size: {self.target_size}")
+        logger.info(f"  Preserve aspect ratio: {self.preserve_aspect_ratio}")
 
         for idx, r in enumerate(records):
             if (idx + 1) % 1000 == 0:
-                print(f"  Progress: {idx + 1}/{len(records)}")
+                logger.info(f"  Progress: {idx + 1}/{len(records)}")
 
             processed_record, error = self.process_image(r, base_dir)
 
             if error:
                 r["_reasons"] = r.get("_reasons", []) + [error]
                 failed.append(r)
+                logger.warning(f"  Failed: {r.get('image_path')} — {error}")
             else:
                 processed.append(processed_record)
 
         failure_rate = len(failed) / len(records) if records else 0
 
-        print(f"\nPreprocessing complete:")
-        print(f"  Success: {len(processed)}")
-        print(f"  Failed: {len(failed)}")
-        print(f"  Failure rate: {failure_rate:.2%}")
+        logger.info("Preprocessing complete:")
+        logger.info(f"  Success: {len(processed)}")
+        logger.info(f"  Failed: {len(failed)}")
+        logger.info(f"  Failure rate: {failure_rate:.2%}")
 
         if failure_rate > self.failure_threshold:
+            logger.error(
+                f"Preprocessing failure rate {failure_rate:.1%} exceeds threshold "
+                f"{self.failure_threshold:.1%} ({len(failed)}/{len(records)} records failed)."
+            )
             raise RuntimeError(
                 f"Preprocessing failure rate {failure_rate:.1%} exceeds threshold "
                 f"{self.failure_threshold:.1%} ({len(failed)}/{len(records)} records failed). "

@@ -1,20 +1,25 @@
 import json
+import logging
 from pathlib import Path
 
+from app.core.logging_config import setup_logging
 from app.dataset.loader import DatasetLoader
 from app.dataset.validator import DatasetValidator
 from app.dataset.preprocessor import Preprocessor
 
-print("Loading dataset...")
-records = DatasetLoader("data/raw/dataset.txt").load()
-print(f"Loaded {len(records)} records\n")
+setup_logging()
+logger = logging.getLogger(__name__)
 
-print("Validating...")
+logger.info("Loading dataset...")
+records = DatasetLoader("data/raw/dataset.txt").load()
+logger.info(f"Loaded {len(records)} records")
+
+logger.info("Validating...")
 validator = DatasetValidator(records, base_image_dir="")
 valid_records, rejected_records = validator.validate()
-print(f"Valid: {len(valid_records)}, Rejected: {len(rejected_records)}\n")
+logger.info(f"Valid: {len(valid_records)}, Rejected: {len(rejected_records)}")
 
-print("Preprocessing images...")
+logger.info("Preprocessing images...")
 preprocessor = Preprocessor(
     output_dir="processed/images",
     target_size=(224, 224),
@@ -24,7 +29,7 @@ preprocessor = Preprocessor(
 
 processed, failed = preprocessor.process(valid_records, base_image_dir="")
 
-print(f"\nFinal stats: {preprocessor.get_statistics()}")
+logger.info(f"Final stats: {preprocessor.get_statistics()}")
 
 # Save a manifest so downstream steps (embedding generation) don't need to
 # re-run preprocessing — the image_path -> processed_path mapping would
@@ -35,4 +40,4 @@ manifest_path.parent.mkdir(parents=True, exist_ok=True)
 with open(manifest_path, "w") as f:
     json.dump(processed, f)
 
-print(f"Saved manifest with {len(processed)} records to {manifest_path}")
+logger.info(f"Saved manifest with {len(processed)} records to {manifest_path}")

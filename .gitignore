@@ -20,3 +20,4 @@ index/*.faiss
 .DS_Store
 *.log
 *.log
+logs/

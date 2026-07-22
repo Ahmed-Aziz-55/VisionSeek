@@ -1,9 +1,12 @@
 import json
+import logging
 import numpy as np
 import torch
 from pathlib import Path
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
+
+logger = logging.getLogger(__name__)
 
 
 class EmbeddingGenerator:
@@ -23,7 +26,7 @@ class EmbeddingGenerator:
         batch_size: int = 64,
     ):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"Loading CLIP model '{model_name}' on {self.device}...")
+        logger.info(f"Loading CLIP model '{model_name}' on {self.device}...")
 
         self.model = CLIPModel.from_pretrained(model_name).to(self.device)
         self.model.eval()  # inference mode — disables dropout etc.
@@ -36,11 +39,9 @@ class EmbeddingGenerator:
         - Old version: directly returns tensor
         - New version (5.x): returns BaseModelOutputWithPooling object
         """
-        # Check if output is a tensor already (old version)
         if isinstance(output, torch.Tensor):
             return output
-        
-        # Check for common attribute names in new version
+
         if hasattr(output, 'pooler_output'):
             return output.pooler_output
         elif hasattr(output, 'image_embeds'):
@@ -48,10 +49,8 @@ class EmbeddingGenerator:
         elif hasattr(output, 'text_embeds'):
             return output.text_embeds
         elif hasattr(output, 'last_hidden_state'):
-            # Fallback: use last_hidden_state mean pooling
             return output.last_hidden_state.mean(dim=1)
         else:
-            # If nothing works, try to convert to tensor
             return torch.tensor(output) if hasattr(output, 'shape') else output
 
     def generate_image_embeddings(self, records: list[dict]) -> tuple[np.ndarray, list[dict]]:
@@ -73,18 +72,16 @@ class EmbeddingGenerator:
                     images.append(img)
                     valid_batch.append(r)
                 except Exception as e:
-                    print(f"  Skipping {r.get('processed_path')}: {e}")
+                    logger.warning(f"Skipping {r.get('processed_path')}: {e}")
 
             if not images:
                 continue
 
             inputs = self.processor(images=images, return_tensors="pt").to(self.device)
 
-            with torch.no_grad():  # no gradients needed — inference only
+            with torch.no_grad():
                 output = self.model.get_image_features(**inputs)
-                # Extract features from output (handles both old and new versions)
                 features = self._extract_features(output)
-                # L2 normalize so downstream cosine similarity == dot product
                 features = features / features.norm(dim=-1, keepdim=True)
 
             all_embeddings.append(features.cpu().numpy())
@@ -92,11 +89,11 @@ class EmbeddingGenerator:
 
             done = min(i + self.batch_size, len(records))
             if done % (self.batch_size * 10) == 0 or done == len(records):
-                print(f"  Image embeddings: {done}/{len(records)}")
+                logger.info(f"Image embeddings: {done}/{len(records)}")
 
         if not all_embeddings:
             return np.array([]).reshape(0, 512), []
-        
+
         embeddings = np.vstack(all_embeddings).astype(np.float32)
         return embeddings, ordered_records
 
@@ -118,7 +115,6 @@ class EmbeddingGenerator:
 
             with torch.no_grad():
                 output = self.model.get_text_features(**inputs)
-                # Extract features from output (handles both old and new versions)
                 features = self._extract_features(output)
                 features = features / features.norm(dim=-1, keepdim=True)
 
@@ -127,11 +123,11 @@ class EmbeddingGenerator:
 
             done = min(i + self.batch_size, len(records))
             if done % (self.batch_size * 10) == 0 or done == len(records):
-                print(f"  Text embeddings: {done}/{len(records)}")
+                logger.info(f"Text embeddings: {done}/{len(records)}")
 
         if not all_embeddings:
             return np.array([]).reshape(0, 512), []
-        
+
         embeddings = np.vstack(all_embeddings).astype(np.float32)
         return embeddings, ordered_records
 
@@ -158,4 +154,4 @@ class EmbeddingGenerator:
         with open(out / f"{prefix}_mapping.json", "w") as f:
             json.dump(mapping, f)
 
-        print(f"Saved {embeddings.shape[0]} {prefix} embeddings to {out}/")
+        logger.info(f"Saved {embeddings.shape[0]} {prefix} embeddings to {out}/")
