@@ -376,3 +376,68 @@ found three issues:
 rather than assuming a file's presence meant it was needed — the same
 principle Decision 3 applies to validation itself: don't take correctness
 on faith, verify it.
+---
+
+## 16. FastAPI backend wraps ImageSearcher, loaded once at startup via lifespan
+
+`app/main.py` exposes `ImageSearcher` over HTTP with two endpoints:
+`POST /search` and `GET /health`. The CLIP model and FAISS index are loaded
+exactly once, at app startup, via FastAPI's `lifespan` context manager, and
+stored on `app.state.searcher`.
+
+**Reasoning:** loading CLIP takes measurable time (~1s+, longer without a
+warm cache) and holds the model in memory. Loading it per-request would add
+that cost to every single search call and needlessly reload the same
+768-dim weights repeatedly. `lifespan` guarantees the load happens exactly
+once, before the server accepts traffic, and `/health` reports whether the
+searcher is ready (`searcher_ready: true/false`) so a caller — or a
+container orchestrator's healthcheck — can distinguish "still starting up"
+from "ready."
+
+Request/response schemas (`app/schemas/search.py`) are kept separate from
+`ImageSearcher`'s internal dict-based results, so the public API contract
+(`SearchRequest`, `SearchResponse`, `SearchResult`) is explicit and doesn't
+silently change if the internal search implementation changes its return
+shape.
+
+---
+
+## 17. docker-compose.yml added for the API service; healthcheck avoids `curl`
+
+`docker-compose.yml` runs the FastAPI service with `docker compose up`,
+mounting the same volumes (`datasets/`, `embeddings/`, `index/`, the
+Hugging Face cache) used by the plain `docker run` workflow, plus `logs/`.
+
+The healthcheck initially used `curl -f http://localhost:8000/health`, but
+the container's base image (`python:3.12-slim`) doesn't include `curl` —
+only `libjpeg62-turbo` and `zlib1g` are installed (Decision on Dockerfile
+system deps). Rather than add `curl` as an extra system dependency purely
+for the healthcheck, the check uses Python's built-in `urllib` instead
+(`python -c "import urllib.request; urllib.request.urlopen(...)"`), since
+Python is already present in every layer of this image.
+
+`version: '3.8'` was also removed from the compose file — it's a legacy
+field ignored by Compose v2 (2.40.3, installed here) and produces a
+deprecation warning with no functional purpose.
+
+---
+
+## 18. `pip install` given explicit retries and a longer timeout in Dockerfile
+
+`RUN pip install --no-cache-dir --retries 10 --timeout 120 -r requirements.txt`
+replaces the original bare `pip install` call.
+
+**Reasoning:** a build failed with `ERROR: Could not find a version that
+satisfies the requirement pydantic==2.13.4 (from versions: none)` —
+`pydantic==2.13.4` is a real, correct pin (confirmed present in the local
+venv), so this was not a real dependency error. Diagnosis (`ping`, `curl`
+timing tests against PyPI and Debian mirrors) showed the network was slow
+and lossy (~15 KB/s throughput, ~25% packet loss to a Debian mirror) —
+pip's default 15-second timeout was too short for a slow connection to
+even receive a response from PyPI before giving up, which pip then
+misreported as "no matching version." Raising the timeout to 120s and
+allowing 10 retries makes the build resilient to transient network
+slowness without masking a genuine dependency error (a truly nonexistent
+package version would still fail after retries).
+
+
