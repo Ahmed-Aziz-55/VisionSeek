@@ -184,7 +184,7 @@ Try it interactively:
 
 Try it interactively:
 
-```bash
+---
 python -m app.scripts.search_demo
 Results
 Evaluated on the full dataset (31,783 caption→image queries), using each caption as a query and checking whether its original image is retrieved.
@@ -197,10 +197,9 @@ Mean search latency	102.3 ms
 p95 latency	150.3 ms
 Near-duplicate images found (similarity ≥ 0.98)	4 pairs
 Full methodology and analysis in app/docs/Decisions.md.
+---
 
-Reproduce with:
-
-bash
+# Reproduce with:
 python -m app.scripts.run_evaluation
 Dataset Format
 Input is a plain text file with one record per line, using pipe separators:
@@ -211,11 +210,11 @@ datasets/Images/example.jpg|a short caption for the image|image
 Setup
 Install runtime dependencies (PyTorch CPU build requires an extra index):
 
-bash
+---
 pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 For development (linting, formatting, tests):
 
-bash
+---
 pip install -r requirements-dev.txt --extra-index-url https://download.pytorch.org/whl/cpu
 Example Usage
 python
@@ -239,11 +238,13 @@ print(stats)
 
 preprocessor = Preprocessor(output_dir="processed/images")
 processed_records, failed_records = preprocessor.process(valid_records, base_image_dir=".")
-
+---
 # After running generate_embeddings.py and build_index.py:
 searcher = ImageSearcher()
 results = searcher.search("a dog running on the beach", top_k=5)
-Project Layout
+
+---
+# Project Layout
 text
 app/
   dataset/        loader, validator, inspector, preprocessor
@@ -262,15 +263,15 @@ index/            saved FAISS index files
 logs/             application logs (gitignored)
 Related Notes
 app/docs/Decisions.md records the architecture decisions behind the current pipeline design.
-
-Docker
+---
+# Docker
 Build the image:
 
-bash
+---
 docker build -t visionseek .
 Run the interactive search demo (mounts the dataset, embeddings, index, and Hugging Face model cache from the host so the image stays small and the CLIP model isn't re-downloaded on every run):
 
-bash
+---
 docker run -it \
   -v $(pwd)/datasets:/app/datasets \
   -v $(pwd)/embeddings:/app/embeddings \
@@ -279,7 +280,7 @@ docker run -it \
   visionseek
 Run any other script instead of the default search demo, e.g. the evaluation suite:
 
-bash
+---
 docker run -it \
   -v $(pwd)/datasets:/app/datasets \
   -v $(pwd)/embeddings:/app/embeddings \
@@ -287,17 +288,17 @@ docker run -it \
   -v ~/.cache/huggingface:/home/appuser/.cache/huggingface \
   visionseek python -m app.scripts.run_evaluation
 The container runs as a non-root user (appuser) and does not bundle the image dataset, embeddings, or FAISS index — those are mounted at runtime via -v, keeping the image itself small (code + dependencies only).
-
-API (FastAPI)
+---
+ # API (FastAPI)
 app/main.py exposes ImageSearcher over HTTP. The CLIP model and FAISS index load once at startup (not per-request).
 
 Run locally:
 
-bash
+---
 uvicorn app.main:app --reload
 Or via Docker Compose (recommended — handles volume mounts automatically):
 
-bash
+---
 docker compose up
 Endpoints
 GET /health — returns {"status": "ok", "searcher_ready": true} once the model and index are loaded.
@@ -320,14 +321,14 @@ json
 }
 Interactive docs (Swagger UI) at http://127.0.0.1:8000/docs.
 
-Testing
+ # Testing
 The project uses pytest for automated testing.
 
 Run all tests
-bash
+---
 pytest -v
 Run a specific test file
-bash
+---
 pytest app/tests/test_loader.py -v
 Current Test Coverage
 ✅ Verify the dataset loader returns the correct number of records.
