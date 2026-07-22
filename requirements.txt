@@ -1,0 +1,8 @@
+numpy==2.5.1
+pandas==3.0.3
+pillow==12.3.0
+pydantic==2.13.4
+pydantic-settings==2.14.2
+torch==2.13.0+cpu
+transformers==5.13.1
+faiss-cpu==1.14.3

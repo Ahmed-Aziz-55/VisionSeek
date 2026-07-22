@@ -127,6 +127,20 @@ image_path|caption|category
 datasets/Images/example.jpg|a short caption for the image|image
 ```
 
+## Setup
+
+Install runtime dependencies (PyTorch CPU build requires an extra index):
+
+```bash
+pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
+For development (linting, formatting, tests):
+
+```bash
+pip install -r requirements-dev.txt --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
 ## Example usage
 
 ```python
