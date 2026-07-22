@@ -118,7 +118,8 @@ Making `processed_path` optional lets the same schema represent a record at
 two different pipeline stages (pre- and post-preprocessing) without needing a
 second model.
 
----
+---￼
+ahmed
 
 ## 7. UUID-based filenames in Preprocessor
 
@@ -244,3 +245,93 @@ embedding generation took well over an hour for 31,783 images, vs. a few
 minutes for ViT-B/32) and requires a larger download (~1.7GB vs ~600MB).
 Acceptable here since embedding generation is a one-time offline step, not
 part of the online search request path.
+
+
+
+
+---
+
+## 14. Evaluation suite built on self-retrieval ground truth (caption → original image)
+
+`app/evaluation/metrics.py` (`RetrievalEvaluator`) and
+`app/evaluation/duplicate_detector.py` (`DuplicateDetector`) were added to
+produce the benchmark numbers required by the internship evaluation:
+Recall@K, Precision@K, duplicate detection, and search latency.
+
+**Ground truth choice:** the dataset has no separate relevance-labeled
+query set. Instead, each (caption, image) pair already in the dataset is
+treated as ground truth — the caption is used as the search query, and the
+image it was originally written for is the single relevant result. This
+"self-retrieval" evaluation is the standard approach for CLIP-style
+text-to-image retrieval benchmarks (same principle as Flickr30k/COCO
+retrieval evaluation), and required no new labeled data.
+
+**Duplicate detection implementation:** initially considered a brute-force
+N×N cosine similarity matrix (`embeddings @ embeddings.T`), but for 31,783
+images this would require a ~4GB float32 matrix and ~1 billion pairwise
+comparisons. Instead, `DuplicateDetector` reuses the already-built FAISS
+`IndexFlatIP` index — for each image it queries the index for its top-2
+nearest neighbors (itself + closest other) in batches, which finds all
+near-duplicate pairs without ever materializing a full pairwise matrix.
+
+### Results (50-sample quick run, `clip-vit-large-patch14`)
+
+| Metric | Value |
+|---|---|
+| Recall@1 | 0.58 |
+| Recall@5 | 0.84 |
+| Recall@10 | 0.92 |
+| Precision@1 | 0.58 |
+| Precision@5 | 0.168 |
+| Precision@10 | 0.092 |
+| Mean search latency | 124.84 ms |
+| p95 latency | 173.1 ms |
+| Near-duplicate pairs found (threshold=0.98) | 4 |
+
+**Precision@K note:** with exactly one relevant image per query,
+Precision@K is mathematically tied to Recall@K / K (e.g. 0.84/5 ≈ 0.168).
+This isn't a flaw in the metric — it's an expected property of a
+single-relevant-item retrieval task, and is documented explicitly so it can
+be explained during evaluation rather than mistaken for a bug.
+
+**Duplicate finding:** one pair (`2851198725.jpg`, `3050606344.jpg`) scored
+similarity 1.0000 — a near-exact visual duplicate under two different
+filenames in the source dataset. This is a genuine data-quality finding
+about the dataset, not a pipeline defect.
+
+**Trade-off:** the 50-sample run is a fast sanity check, not the final
+reported number — each query requires a live CLIP text encode + FAISS
+search, so evaluating the full ~31K queries would take significantly
+longer. A larger sample (e.g. 500) will be run for the final reported
+metrics before submission.
+
+
+
+****************************************************************
+### Final results (full dataset, 31,783 queries)
+
+| Metric | Value |
+|---|---|
+| Recall@1 | 0.4982 |
+| Recall@5 | 0.7326 |
+| Recall@10 | 0.8086 |
+| Precision@1 | 0.4982 |
+| Precision@5 | 0.1465 |
+| Precision@10 | 0.0809 |
+| Mean search latency | 102.33 ms |
+| p95 latency | 150.3 ms |
+| p99 latency | 166.0 ms |
+| Near-duplicate pairs found (threshold=0.98) | 4 (identical to the 50-sample run) |
+
+**50-sample vs full-dataset comparison:** the initial 50-sample sanity
+check reported Recall@1=0.58, noticeably higher than the full-dataset
+Recall@1=0.498. This is a concrete example of small-sample optimistic
+bias — a random 50-query subset happened to contain a disproportionate
+share of easy queries. This is precisely why the final reported metric is
+the full 31,783-query run rather than the quick sample: sampling error on
+a set this small was large enough to meaningfully overstate performance.
+The duplicate-detection results were identical across both runs (same 4
+pairs, same similarities), which is expected since duplicate detection is
+deterministic and doesn't depend on query sampling.
+
+*****************************************************************************

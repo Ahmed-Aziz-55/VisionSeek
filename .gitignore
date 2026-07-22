@@ -18,3 +18,5 @@ index/*.faiss
 
 # OS files
 .DS_Store
+*.log
+*.log

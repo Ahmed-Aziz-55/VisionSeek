@@ -1,0 +1,61 @@
+{
+  "timestamp": "20260720_151730",
+  "config": {
+    "k_values": [
+      1,
+      5,
+      10
+    ],
+    "eval_sample_size": 50,
+    "latency_sample_size": 100,
+    "duplicate_threshold": 0.98
+  },
+  "recall": {
+    "recall@1": 0.58,
+    "recall@5": 0.84,
+    "recall@10": 0.92
+  },
+  "precision": {
+    "precision@1": 0.58,
+    "precision@5": 0.16799999999999998,
+    "precision@10": 0.092
+  },
+  "latency": {
+    "mean_ms": 124.84,
+    "p50_ms": 121.73,
+    "p95_ms": 173.1,
+    "p99_ms": 184.03,
+    "sample_size": 100
+  },
+  "duplicate_pairs_found": 4,
+  "duplicate_pairs": [
+    {
+      "idx_a": 9160,
+      "idx_b": 10770,
+      "similarity": 1.0000001192092896,
+      "image_a": "datasets/Images/2851198725.jpg",
+      "image_b": "datasets/Images/3050606344.jpg"
+    },
+    {
+      "idx_a": 23092,
+      "idx_b": 23623,
+      "similarity": 0.9941145181655884,
+      "image_a": "datasets/Images/4757590012.jpg",
+      "image_b": "datasets/Images/4803943201.jpg"
+    },
+    {
+      "idx_a": 30883,
+      "idx_b": 30884,
+      "similarity": 0.9844090938568115,
+      "image_a": "datasets/Images/7916394844.jpg",
+      "image_b": "datasets/Images/7916403012.jpg"
+    },
+    {
+      "idx_a": 18989,
+      "idx_b": 31504,
+      "similarity": 0.9814786911010742,
+      "image_a": "datasets/Images/4265333893.jpg",
+      "image_b": "datasets/Images/88127430.jpg"
+    }
+  ]
+}
