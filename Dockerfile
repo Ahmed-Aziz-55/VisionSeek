@@ -23,7 +23,11 @@ COPY data/raw/ ./data/raw/
 
 # Run as non-root user — running containers as root is a security risk
 # (if the container is compromised, the attacker has root inside it).
-RUN useradd --create-home appuser
+# Create logs/ and hand ownership of /app to appuser before switching —
+# otherwise appuser can't write logs (WORKDIR is created as root).
+RUN useradd --create-home appuser \
+    && mkdir -p /app/logs \
+    && chown -R appuser:appuser /app
 USER appuser
 
 # Default: interactive search demo. Override at `docker run` time to run
