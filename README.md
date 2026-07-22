@@ -135,7 +135,7 @@ the record fails ImageRecord Pydantic schema validation
 
 Each rejected record carries a _reasons list so failures remain visible during analysis.
 
-Preprocessing Behavior
+Preprocessing
 The preprocessor currently:
 
 resizes images to a target size of 224 x 224 by default
@@ -306,17 +306,17 @@ POST /search — text-to-image search.
 Request:
 
 json
-  {"query": "a dog running on the beach", "top_k": 5}
+{"query": "a dog running on the beach", "top_k": 5}
 Response:
 
 json
-  {
-    "query": "a dog running on the beach",
-    "count": 5,
-    "results": [
-      {"image_path": "datasets/Images/1799271536.jpg", "caption": "...", "score": 0.303}
-    ]
-  }
+{
+  "query": "a dog running on the beach",
+  "count": 5,
+  "results": [
+    {"image_path": "datasets/Images/1799271536.jpg", "caption": "...", "score": 0.303}
+  ]
+}
 Interactive docs (Swagger UI) at http://127.0.0.1:8000/docs.
 
 Testing
